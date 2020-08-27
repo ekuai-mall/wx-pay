@@ -5,13 +5,11 @@
  * 一个php微信支付插件（类）
  * @author kuai
  * @copyright ekuai 2020
- * @version 1.0
+ * @version 1.1
  */
 include 'WxPay.php';
 
 class WxPay extends WxPayBase {
-	const ERR_DB = 'database error';
-	const ERR_SVR = 'server error';
 	protected $mysql;
 	public $error = '';
 	
@@ -50,7 +48,7 @@ class WxPay extends WxPayBase {
 			$ret = $this->ret(300002, $res['err_code']);
 		} else {
 			$this->query("INSERT INTO `ekm_order` (`time_start`, `status`, `product`, `user`, `order`, `price`, `url`, `remark`) VALUES (?, 'NOTPAY', ?, ?, ?, ?, ?, ?);", [time(), $productId, $user, $res['out_trade_no'], $price, $res['code_url'], $remark]);
-			$ret = $this->ret(0, $res['code_url']);
+			$ret = $this->ret(0, $res['out_trade_no']);
 		}
 		return $ret;
 	}
