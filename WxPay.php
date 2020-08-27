@@ -2,7 +2,7 @@
 require_once __DIR__ . "/lib/WxPay.Api.php";
 require_once "WxPay.Config.php";
 
-class WxPay {
+class WxPayBase {
 	/**
 	 * 生成直接支付url，支付url有效期为2小时,模式二
 	 * @param WxPayUnifiedOrder $input
@@ -20,7 +20,7 @@ class WxPay {
 	}
 	
 	public function NativeGetPayUrl($body, $attach, $price, $productId) {
-		$trade_no = "life" . $attach . date("YmdHis") . mt_rand(10000, 65535);
+		$trade_no = date("YmdHis") . $attach . mt_rand(10000, 65535);
 		$input = new WxPayUnifiedOrder();
 		$input->SetBody($body);
 		$input->SetAttach($attach);
