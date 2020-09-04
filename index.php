@@ -5,7 +5,7 @@
  * 一个php微信支付插件（类）
  * @author kuai
  * @copyright ekuai 2020
- * @version 1.2
+ * @version 1.3
  */
 include 'WxPay.php';
 
@@ -54,7 +54,7 @@ class WxPay extends WxPayBase {
 	}
 	
 	public function checkOrder($order) {
-		$res = $this->checkOrder($order);
+		$res = $this->orderQuery($order);
 		if ($res['return_code'] !== 'SUCCESS') {
 			$ret = $this->ret(310001, $res['return_msg']);
 		} else if ($res['result_code'] !== 'SUCCESS') {
