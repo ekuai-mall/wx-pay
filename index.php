@@ -5,7 +5,7 @@
  * 一个php微信支付插件（类）
  * @author kuai
  * @copyright ekuai 2020
- * @version 1.3
+ * @version 2.1
  */
 include 'WxPay.php';
 
@@ -40,15 +40,40 @@ class WxPay extends WxPayBase {
 		return ['status' => $status, 'ret' => $ret];
 	}
 	
-	public function newOrder($order, $user, $productId, $price, $remark) {
-		$res = $this->NativeGetPayUrl($order, $user, $price, $productId);
-		if ($res['return_code'] !== 'SUCCESS') {
-			$ret = $this->ret(300001, $res['return_msg']);
-		} else if ($res['result_code'] !== 'SUCCESS') {
-			$ret = $this->ret(300002, $res['err_code']);
+	protected function getURL() {
+		$pageURL = 'http';
+		if ($_SERVER["HTTPS"] == "on") {
+			$pageURL .= "s";
+		}
+		$pageURL .= "://";
+		$this_page = $_SERVER["REQUEST_URI"];
+		if (strpos($this_page, "?") !== false) {
+			$this_pages = explode("?", $this_page);
+			$this_page = reset($this_pages);
+		}
+		if ($_SERVER["SERVER_PORT"] != "80") {
+			$pageURL .= $_SERVER["SERVER_NAME"] . ":" . $_SERVER["SERVER_PORT"] . $this_page;
 		} else {
-			$this->query("INSERT INTO `ekm_order` (`name`,`time_start`, `status`, `product`, `user`, `order`, `price`, `url`, `remark`) VALUES (?, ?, 'NOTPAY', ?, ?, ?, ?, ?, ?);", [$order, time(), $productId, $user, $res['out_trade_no'], $price, $res['code_url'], $remark]);
-			$ret = $this->ret(0, $res['out_trade_no']);
+			$pageURL .= $_SERVER["SERVER_NAME"] . $this_page;
+		}
+		return $pageURL;
+	}
+	
+	public function newOrder($order, $user, $productId, $price, $remark) {
+		if (strpos($_SERVER['HTTP_USER_AGENT'], 'MicroMessenger') === false) {
+			$res = $this->NativeGetPayUrl($order, $user, $price, $productId);
+			if ($res['return_code'] !== 'SUCCESS') {
+				$ret = $this->ret(300001, $res['return_msg']);
+			} else if ($res['result_code'] !== 'SUCCESS') {
+				$ret = $this->ret(300002, $res['err_code']);
+			} else {
+				$this->query("INSERT INTO `ekm_order` (`name`,`time_start`, `status`, `product`, `user`, `order`, `price`, `url`, `remark`) VALUES (?, ?, 'NOTPAY', ?, ?, ?, ?, ?, ?);", [$order, time(), $productId, $user, $res['out_trade_no'], $price, $res['code_url'], $remark]);
+				$ret = $this->ret(0, $res['out_trade_no']);
+			}
+		} else {
+			$tradeNo = $this->newTradeNo($user);
+			$this->query("INSERT INTO `ekm_order` (`name`,`time_start`, `status`, `product`, `user`, `order`, `price`, `url`, `remark`) VALUES (?, ?, 'NOTPAY', ?, ?, ?, ?, ?, ?);", [$order, time(), $productId, $user, $tradeNo, $price, 'JSAPI', $remark]);
+			$ret = $this->ret(0, $tradeNo);
 		}
 		return $ret;
 	}
@@ -68,6 +93,10 @@ class WxPay extends WxPayBase {
 			$ret = $this->ret(0, $res['trade_state']);
 		}
 		return $ret;
+	}
+	
+	public function generateOrder($order, $user, $price, $trade_no, $openid) {
+		return $this->JsGetPayParams($order, $user, $price, $trade_no, $openid);
 	}
 	
 }
