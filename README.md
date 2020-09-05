@@ -8,5 +8,6 @@ rename to WxPay.Config.php
 
 ### function
 - 微信支付（Native)
+- 微信支付（JsAPI）
 - 订单查询
 
