@@ -17,6 +17,7 @@ CREATE TABLE `ekm_order`
     `price`       int(11) NOT NULL,
     `url`         text    NOT NULL,
     `remark`      text    NOT NULL,
+    `extra`       text
     PRIMARY KEY (`id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
