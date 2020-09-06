@@ -3,6 +3,25 @@ require_once __DIR__ . "/lib/WxPay.Api.php";
 require_once "WxPay.Config.php";
 
 class WxPayBase {
+	public function getPageURL() {
+		$pageURL = 'http';
+		if ($_SERVER["HTTPS"] == "on") {
+			$pageURL .= "s";
+		}
+		$pageURL .= "://";
+		$this_page = $_SERVER["REQUEST_URI"];
+		if (strpos($this_page, "?") !== false) {
+			$this_pages = explode("?", $this_page);
+			$this_page = reset($this_pages);
+		}
+		if ($_SERVER["SERVER_PORT"] != "80") {
+			$pageURL .= $_SERVER["SERVER_NAME"] . ":" . $_SERVER["SERVER_PORT"] . $this_page;
+		} else {
+			$pageURL .= $_SERVER["SERVER_NAME"] . $this_page;
+		}
+		return $pageURL;
+	}
+	
 	public function newTradeNo($attach) {
 		return date("YmdHis") . $attach . mt_rand(10000, 65535);
 	}
@@ -16,14 +35,10 @@ class WxPayBase {
 	 * @param WxPayUnifiedOrder $input
 	 */
 	protected function GetPayUrl($input) {
-		if ($input->GetTrade_type() == "NATIVE" || $input->GetTrade_type() == 'JSAPI') {
-			try {
-				$config = new WxPayConfig();
-				return WxPayApi::unifiedOrder($config, $input);
-			} catch (Exception $e) {
-				return false;
-			}
-		} else {
+		try {
+			$config = new WxPayConfig();
+			return WxPayApi::unifiedOrder($config, $input);
+		} catch (Exception $e) {
 			return false;
 		}
 	}
@@ -37,7 +52,6 @@ class WxPayBase {
 		$input->SetTotal_fee($price);
 		$input->SetTime_start(date("YmdHis"));
 		$input->SetTime_expire(date("YmdHis", time() + 600));
-		$input->SetNotify_url("http://paysdk.weixin.qq.com/notify.php");
 		$input->SetTrade_type("NATIVE");
 		$input->SetProduct_id($productId);
 		$ret = $this->GetPayUrl($input);
@@ -53,7 +67,6 @@ class WxPayBase {
 		$input->SetTotal_fee($price);
 		$input->SetTime_start(date("YmdHis"));
 		$input->SetTime_expire(date("YmdHis", time() + 600));
-		$input->SetNotify_url("http://paysdk.weixin.qq.com/notify.php");
 		$input->SetTrade_type("JSAPI");
 		$input->SetOpenid($openId);
 		$ret = $this->GetPayUrl($input);
@@ -72,6 +85,22 @@ class WxPayBase {
 			$jsapi->SetPaySign($jsapi->MakeSign($config));
 			$ret = $this->ret(0, $jsapi->GetValues());
 		}
+		return $ret;
+	}
+	
+	public function H5GetPayUrl($body, $attach, $price) {
+		$trade_no = $this->newTradeNo($attach);
+		$input = new WxPayUnifiedOrder();
+		$input->SetBody($body);
+		$input->SetAttach($attach);
+		$input->SetOut_trade_no($trade_no);
+		$input->SetTotal_fee($price);
+		$input->SetTime_start(date("YmdHis"));
+		$input->SetTime_expire(date("YmdHis", time() + 600));
+		$input->SetTrade_type("MWEB");
+//		$input->SetScene_info('{"h5_info": {"type":"Wap","wap_url": ' . $this->getPageURL() . ',"wap_name": "商城"}}');
+		$ret = $this->GetPayUrl($input);
+		$ret['out_trade_no'] = $trade_no;
 		return $ret;
 	}
 	
